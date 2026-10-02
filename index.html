@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한국 도시지리학 타이쿤 (Korean Urban Geography Simulator)</title>
+    <style>
+        :root {
+            --bg-dark: #0b0f19;
+            --bg-card: #161e2e;
+            --bg-card-hover: #1e2a3e;
+            --bg-modal: #111827;
+            --accent-cyan: #06b6d4;
+            --accent-teal: #14b8a6;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --accent-indigo: #6366f1;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2e3d54;
+            --border-highlight: #3b82f6;
+            --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+            --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Pretendard", sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Top Header */
+        header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .brand-title h1 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #ffffff, #93c5fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-title p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Live Stat Cards */
+        .stats-bar {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.5rem 0.9rem;
+            min-width: 140px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(8px);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-cyan);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-value {
+            font-size: 1.15rem;
+            font-weight: 800;
+            display: flex;
+            align-items: baseline;
+            gap: 0.25rem;
+        }
+
+        .stat-progress {
+            height: 4px;
+            background: #334155;
+            border-radius: 2px;
+            margin-top: 0.35rem;
+            overflow: hidden;
+        }
+
+        .stat-progress-bar {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.4s ease, background-color 0.4s ease;
+        }
+
+        /* Header Utility Buttons */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        /* Main Container */
+        main {
+            max-width: 1400px;
+            margin: 1.5rem auto;
+            padding: 0 1.5rem;
+            flex: 1;
+            width: 100%;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Common Glass Card */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        /* Map Card Layout */
+        .map-wrapper {
+            position: relative;
+            width: 100%;
+            height: 480px;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #korea-svg {
+            width: 100%;
+            height: 100%;
+            max-height: 460px;
+            filter: drop-shadow(0 0 15px rgba(6, 182, 212, 0.15));
+        }
+
+        /* Map SVG Elements */
+        .map-region {
+            fill: #1e293b;
+            stroke: #334155;
+            stroke-width: 1.5;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .map-region:hover {
+            fill: #334155;
+            stroke: var(--accent-cyan);
+        }
+
+        .map-node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .map-node circle.main-dot {
+            fill: var(--accent-cyan);
+            stroke: #ffffff;
+            stroke-width: 2;
+            transition: all 0.3s ease;
+        }
+
+        .map-node circle.pulse {
+            fill: none;
+            stroke: var(--accent-cyan);
+            stroke-width: 1.5;
+            animation: pulse-ring 2s infinite ease-out;
+        }
+
+        @keyframes pulse-ring {
+            0% { r: 6; opacity: 1; }
+            100% { r: 22; opacity: 0; }
+        }
+
+        .map-node text {
+            fill: var(--text-primary);
+            font-size: 11px;
+            font-weight: 700;
+            pointer-events: none;
+            text-anchor: middle;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .map-overlay-status {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.6rem 0.9rem;
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .map-legend {
+            display: flex;
+            gap: 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        /* Scenario & Quiz Card */
+        .scenario-badge-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .scenario-step {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .scenario-cat {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--accent-amber);
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .scenario-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+
+        .scenario-desc {
+            font-size: 0.92rem;
+            color: #cbd5e1;
+            background: rgba(15, 23, 42, 0.6);
+            border-left: 3px solid var(--accent-cyan);
+            padding: 0.85rem 1rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 1.25rem;
+            line-height: 1.6;
+        }
+
+        /* Options */
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .option-btn {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            color: var(--text-primary);
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: var(--bg-card-hover);
+            border-color: var(--accent-cyan);
+            transform: translateX(4px);
+        }
+
+        .option-letter {
+            background: #334155;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 0.85rem;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .option-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+            flex: 1;
+            line-height: 1.45;
+        }
+
+        .option-btn.selected-optimal {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--accent-emerald);
+        }
+
+        .option-btn.selected-optimal .option-letter {
+            background: var(--accent-emerald);
+        }
+
+        .option-btn.selected-suboptimal {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: var(--accent-amber);
+        }
+
+        .option-btn.selected-suboptimal .option-letter {
+            background: var(--accent-amber);
+        }
+
+        .option-btn.selected-warning {
+            background: rgba(244, 63, 94, 0.15);
+            border-color: var(--accent-rose);
+        }
+
+        .option-btn.selected-warning .option-letter {
+            background: var(--accent-rose);
+        }
+
+        /* Choice Feedback Box */
+        .feedback-box {
+            margin-top: 1.25rem;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .feedback-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .feedback-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .feedback-deltas {
+            display: flex;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .delta-tag {
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        .delta-pos { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .delta-neg { background: rgba(244, 63, 94, 0.2); color: #fb7185; }
+
+        .feedback-summary {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .feedback-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.8);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--text-secondary);
+        }
+
+        /* Modals */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-container {
+            background: var(--bg-modal);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            transform: scale(0.95);
+            transition: transform 0.25s ease;
+            overflow: hidden;
+        }
+
+        .modal-backdrop.active .modal-container {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1.25rem 1.5rem;
+            background: #1e293b;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #ffffff;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #ffffff;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+            font-size: 0.92rem;
+            color: #cbd5e1;
+            line-height: 1.65;
+        }
+
+        /* Academic Breakdown Modal Content */
+        .theory-section {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .theory-section h4 {
+            color: var(--accent-cyan);
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .concept-pill-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .concept-pill {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            color: #a5b4fc;
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        /* Glossary Tab & Controls */
+        .glossary-controls {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            background: #1e293b;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem 0.8rem;
+            color: #ffffff;
+            font-size: 0.85rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+
+        .glossary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
+        .glossary-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .glossary-card:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .glossary-term {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.35rem;
+        }
+
+        .glossary-term-en {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .glossary-def {
+            font-size: 0.83rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+
+        .glossary-example {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed var(--border-color);
+            font-size: 0.78rem;
+            color: var(--accent-teal);
+        }
+
+        .locked-term {
+            opacity: 0.5;
+            filter: grayscale(1);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            padding: 1.25rem 1.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: #080c14;
+        }
+
+        footer strong {
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <div class="brand-title">
+                <span class="brand-badge">Sim v1.0</span>
+                <div>
+                    <h1>한국 도시지리학 타이쿤</h1>
+                    <p>Korean Urban Geography Simulator (대학생 학술용)</p>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat-card" title="국토 균형발전 지수 (지방과 수도권의 상생 균형도)">
+                    <div class="stat-header">
+                        <span>국토 균형</span>
+                        <span id="stat-balance-val">50%</span>
+                    </div>
+                    <div class="stat-value" id="stat-balance-text">보통</div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-bar" id="stat-balance-bar" style="width: 50%; background-color: var(--accent-cyan);"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card" title="지역 경제 활력 지수 (생산성, 첨단산업 및 고용창출)">
+                    <div class="stat-header">
+                        <span>경제 활력</span>
+                        <span id="stat-economy-val">50%</span>
+                    </div>
+                    <div class="stat-value" id="stat-economy-text">보통</div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-bar" id="stat-economy-bar" style="width: 50%; background-color: var(--accent-amber);"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card" title="주민 삶의 질 지수 (주거, 직주근접, 환경 및 사회적 포용성)">
+                    <div class="stat-header">
+                        <span>주민 삶의 질</span>
+                        <span id="stat-qol-val">50%</span>
+                    </div>
+                    <div class="stat-value" id="stat-qol-text">보통</div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-bar" id="stat-qol-bar" style="width: 50%; background-color: var(--accent-emerald);"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card" title="학습 카드 & 지리 개념 달성도">
+                    <div class="stat-header">
+                        <span>개념 달성도</span>
+                        <span id="stat-mastery-val">0%</span>
+                    </div>
+                    <div class="stat-value" id="stat-mastery-text">0 / 22</div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-bar" id="stat-mastery-bar" style="width: 0%; background-color: var(--accent-indigo);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="header-actions">
+                <button class="btn-icon" id="btn-sound-toggle" title="사운드 효과음 켜기/끄기">
+                    <span id="sound-icon">🔊</span> <span id="sound-text">효과음</span>
+                </button>
+                <button class="btn-icon" id="btn-open-glossary" title="지리 학술 개념 노트 열기">
+                    📖 <span>개념 노트</span>
+                </button>
+                <button class="btn-icon" id="btn-reset-game" title="시뮬레이션 초기화">
+                    🔄 <span>초기화</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="dashboard-grid">
+            
+            <!-- Left Column: Korea Regional Map Visualizer -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        🗺️ <span>대한민국 공간구조 &amp; 거점 모니터</span>
+                    </div>
+                    <span style="font-size: 0.75rem; color: var(--text-secondary);" id="map-status-badge">실시간 도시 정책 반영 중</span>
+                </div>
+
+                <div class="map-wrapper">
+                    <svg id="korea-svg" viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="4" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                            </filter>
+                        </defs>
+
+                        <!-- Stylized Korea Regions -->
+                        <!-- Capital Region (수도권) -->
+                        <path id="region-capital" class="map-region" d="M140,110 L230,100 L240,170 L210,210 L130,190 L120,140 Z" data-name="수도권 (서울/경기/인천)" />
+                        <!-- Gangwon Region (강원권) -->
+                        <path id="region-gangwon" class="map-region" d="M230,100 L350,90 L360,200 L240,170 Z" data-name="강원권" />
+                        <!-- Chungcheong Region (충청/세종권) -->
+                        <path id="region-chungcheong" class="map-region" d="M130,190 L210,210 L240,170 L280,260 L180,290 L120,240 Z" data-name="충청·세종권" />
+                        <!-- Yeongnam/Gyeongsang Region (영남/동남권) -->
+                        <path id="region-yeongnam" class="map-region" d="M280,260 L360,200 L410,310 L380,450 L270,440 L260,330 Z" data-name="영남·동남권 (울산/포항/대구/부산)" />
+                        <!-- Honam/Jeolla Region (호남권) -->
+                        <path id="region-honam" class="map-region" d="M180,290 L260,330 L270,440 L160,460 L130,350 Z" data-name="호남·빛가람권 (광주/전주/나주)" />
+                        <!-- Jeju (제주) -->
+                        <path id="region-jeju" class="map-region" d="M140,540 L190,540 L185,575 L135,575 Z" data-name="제주권" />
+
+                        <!-- Connective Dynamic Lines (GTX / Transport / Wind Corridors) -->
+                        <!-- GTX Route Animation Overlay -->
+                        <path id="path-gtx" d="M150,135 Q185,150 215,185" fill="none" stroke="var(--accent-cyan)" stroke-width="3" stroke-dasharray="6,6" opacity="0.3" />
+                        <!-- Innovation Relocation Vectors -->
+                        <path id="path-innovation" d="M185,150 L210,240 M185,150 L210,380" fill="none" stroke="var(--accent-amber)" stroke-width="2" stroke-dasharray="4,4" opacity="0.3" />
+                        <!-- Wind Corridor Overlay -->
+                        <path id="path-wind" d="M300,240 Q320,300 330,340" fill="none" stroke="var(--accent-emerald)" stroke-width="4" opacity="0.2" />
+
+                        <!-- Interactive City Nodes -->
+                        <!-- Node 1: Seoul Capital Core -->
+                        <g class="map-node" id="node-seoul" transform="translate(180, 140)">
+                            <circle class="pulse" r="12" />
+                            <circle class="main-dot" r="7" />
+                            <text y="-12">서울 도심</text>
+                        </g>
+
+                        <!-- Node 2: Pangyo / Bundang -->
+                        <g class="map-node" id="node-pangyo" transform="translate(195, 165)">
+                            <circle class="pulse" r="10" />
+                            <circle class="main-dot" r="5" />
+                            <text y="16">판교/분당</text>
+                        </g>
+
+                        <!-- Node 3: Seongsu / Renewal Hub -->
+                        <g class="map-node" id="node-seongsu" transform="translate(185, 148)">
+                            <circle class="main-dot" r="4" fill="var(--accent-rose)" />
+                            <text x="24" y="4">성수동</text>
+                        </g>
+
+                        <!-- Node 4: Sejong City -->
+                        <g class="map-node" id="node-sejong" transform="translate(205, 240)">
+                            <circle class="pulse" r="12" />
+                            <circle class="main-dot" r="6" fill="var(--accent-amber)" />
+                            <text y="-12">세종 행정도시</text>
+                        </g>
+
+                        <!-- Node 5: Ulsan Maritime Industry -->
+                        <g class="map-node" id="node-ulsan" transform="translate(375, 395)">
+                            <circle class="pulse" r="12" />
+                            <circle class="main-dot" r="6" fill="var(--accent-indigo)" />
+                            <text y="18">울산/포항 공업지대</text>
+                        </g>
+
+                        <!-- Node 6: Daegu Basin -->
+                        <g class="map-node" id="node-daegu" transform="translate(325, 335)">
+                            <circle class="pulse" r="10" />
+                            <circle class="main-dot" r="5" fill="var(--accent-emerald)" />
+                            <text y="-10">대구 바람길 분지</text>
+                        </g>
+
+                        <!-- Node 7: Naju Innovation Hub -->
+                        <g class="map-node" id="node-naju" transform="translate(205, 410)">
+                            <circle class="main-dot" r="5" fill="var(--accent-amber)" />
+                            <text y="16">나주 빛가람</text>
+                        </g>
+                    </svg>
+
+                    <!-- Map Overlay Status Bar -->
+                    <div class="map-overlay-status">
+                        <span id="map-active-focus">📍 현재 집중 지역: 수도권 공간구조</span>
+                        <div class="map-legend">
+                            <div class="legend-item"><div class="legend-color" style="background: var(--accent-cyan);"></div> 수도권</div>
+                            <div class="legend-item"><div class="legend-color" style="background: var(--accent-amber);"></div> 혁신도시</div>
+                            <div class="legend-item"><div class="legend-color" style="background: var(--accent-indigo);"></div> 공업지대</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Interactive Scenario Card & Quiz Engine -->
+            <div class="card" id="scenario-card-container">
+                <div class="card-header">
+                    <div class="scenario-badge-group">
+                        <span class="scenario-step" id="scenario-step-text">시나리오 1 / 10</span>
+                        <span class="scenario-cat" id="scenario-cat-text">수도권 공간구조</span>
+                    </div>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);" id="scenario-author-tag">국토·도시계획 시뮬레이터</span>
+                </div>
+
+                <!-- Title & Context -->
+                <h2 class="scenario-title" id="scenario-title">1기 신도시와 2기 신도시(판교)의 공간구조 비교</h2>
+                <div class="scenario-desc" id="scenario-desc">
+                    분당·일산 등 1기 신도시는 대도시 도심 주택난을 급격히 해소하기 위해 조성되었으나, 상업·일자리 자족용지가 부족해 서울 도심으로의 심각한 통근 교통혼잡을 유발했습니다. 판교 등 2기 신도시는 이를 보완하고자 첨단 테크노밸리를 배치했습니다. 지속가능한 수도권 공간구조를 형성하기 위한 최적의 거점 정책은?
+                </div>
+
+                <!-- Options -->
+                <div class="options-list" id="options-container">
+                    <!-- Dynamic rendering of 4 choices -->
+                </div>
+
+                <!-- Feedback Box (Hidden initially) -->
+                <div class="feedback-box" id="feedback-box">
+                    <div class="feedback-header">
+                        <div class="feedback-title" id="feedback-title">
+                            ✅ 최적의 지리적 의사결정입니다!
+                        </div>
+                        <div class="feedback-deltas" id="feedback-deltas">
+                            <span class="delta-tag delta-pos">+15% 균형</span>
+                            <span class="delta-tag delta-pos">+10% 경제</span>
+                        </div>
+                    </div>
+                    <div class="feedback-summary" id="feedback-summary">
+                        판교 테크노밸리는 알론소의 입찰지대이론과 자족도시 모델을 성공적으로 결합한 사례입니다.
+                    </div>
+                    <div class="feedback-actions">
+                        <button class="btn-primary" id="btn-open-theory">
+                            🎓 학술 심층 해설 보기
+                        </button>
+                        <button class="btn-secondary" id="btn-next-scenario">
+                            다음 시나리오 ➔
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal 1: Academic Breakdown Modal -->
+    <div class="modal-backdrop" id="modal-theory">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title">
+                    🎓 학술 심층 해설 및 지리학 이론 분석
+                </div>
+                <button class="modal-close" id="btn-close-theory">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-theory-body">
+                <!-- In-depth Academic Text inserted via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Academic Glossary Notebook -->
+    <div class="modal-backdrop" id="modal-glossary">
+        <div class="modal-container" style="max-width: 900px;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    📖 지리 학술 개념 노트 (한국 도시지리학 복습용)
+                </div>
+                <button class="modal-close" id="btn-close-glossary">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="glossary-controls">
+                    <input type="text" class="search-input" id="glossary-search" placeholder="지리학 개념 검색 (예: 침상도시, 입찰지대, 젠트리피케이션...)" />
+                </div>
+                <div class="glossary-grid" id="glossary-grid-container">
+                    <!-- Glossary cards rendered via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Simulation Final Report Card -->
+    <div class="modal-backdrop" id="modal-final-report">
+        <div class="modal-container" style="max-width: 650px; text-align: center;">
+            <div class="modal-header" style="justify-content: center;">
+                <div class="modal-title">
+                    🏆 국토·도시계획 자문 최종 평가 보고서
+                </div>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <div style="font-size: 3.5rem; margin-bottom: 0.5rem;" id="final-rank-badge">🥇</div>
+                <h2 style="font-size: 1.6rem; color: #fff; font-weight: 800; margin-bottom: 0.5rem;" id="final-rank-title">S급: 국토도시계획 대석학</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;" id="final-rank-desc">
+                    한국 도시지리학 이론과 공간 정책을 완벽히 이해하여 국토 균형과 경제 활력을 성공적으로 달성했습니다!
+                </p>
+
+                <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">국토 균형</div>
+                        <div style="font-size: 1.3rem; font-weight: 800; color: var(--accent-cyan);" id="final-stat-balance">85%</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">지역 경제</div>
+                        <div style="font-size: 1.3rem; font-weight: 800; color: var(--accent-amber);" id="final-stat-economy">90%</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">주민 삶의 질</div>
+                        <div style="font-size: 1.3rem; font-weight: 800; color: var(--accent-emerald);" id="final-stat-qol">88%</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 1rem;">
+                    <button class="btn-primary" id="btn-restart-sim">
+                        🔄 다시 도전하기
+                    </button>
+                    <button class="btn-secondary" id="btn-view-glossary-final">
+                        📖 지리 개념 노트 전체 검토
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p><strong>한국 도시지리학 타이쿤 (Korean Urban Geography Simulator)</strong> &copy; 2026 Academic Edition</p>
+        <p style="margin-top: 0.25rem; font-size: 0.75rem;">본 프로그램은 대학 지리학/도시학 전공자를 위해 제작된 전공 학습 및 정책 시뮬레이터입니다.</p>
+    </footer>
+
+    <!-- JavaScript Game Engine -->
+    <script>
+        /* ==========================================================================
+           1. ACADEMIC GLOSSARY DATABASE (22 Terms)
+           ========================================================================== */
+        const GLOSSARY_DB = [
+            {
+                id: "bed_town",
+                term: "침상도시 (Bed Town)",
+                termEn: "Commuter Town / Bedroom Community",
+                cat: "수도권 공간구조",
+                def: "대도시 도심의 주택 부족을 해소하기 위해 교외에 형성된 도시. 주거 기능 위주로 개발되어 모도시(CBD)로의 출퇴근 교통 혼잡과 기회비용이 큽니다.",
+                example: "1기 신도시(초기 분당, 일산)의 높은 서울 통근 의존도."
+            },
+            {
+                id: "self_sufficient",
+                term: "자족도시 (Self-Sufficient City)",
+                termEn: "Self-Sustaining City",
+                cat: "수도권 공간구조",
+                def: "도시 내부에서 자급자족할 수 있는 일자리(IT, R&D 산단), 상업, 행정, 문화 인프라를 완비하여 직주근접을 실현한 도시.",
+                example: "2기 신도시 판교 테크노밸리의 높은 자족용지 비율."
+            },
+            {
+                id: "burgess_concentric",
+                term: "버제스의 동심원이론",
+                termEn: "Concentric Zone Model (Burgess)",
+                cat: "도시 공간 구조론",
+                def: "도심(CBD)을 중심으로 전이지대, 저소득층 주거지, 중산층 주거지, 통근자 지대 등 5개 동심원 지대로 도시가 침입·계승 과정을 통해 확장된다는 이론.",
+                example: "서울 도심 주변의 환상 고속도로(수도권순환) 개발 구역 분석."
+            },
+            {
+                id: "hoyt_sector",
+                term: "호이트의 선형이론",
+                termEn: "Sector Model (Hoyt)",
+                cat: "도시 공간 구조론",
+                def: "도시 공간이 주요 교통 축(철도, 간선도로)을 따라 부채꼴(선형) 모양으로 신장 및 확대된다는 이론.",
+                example: "경부고속도로 및 경부선 철도 축을 따른 수도권 남부 발전 축선."
+            },
+            {
+                id: "alonso_bidrent",
+                term: "알론소의 입찰지대이론",
+                termEn: "Bid-Rent Theory (Alonso)",
+                cat: "도시 토지이용",
+                def: "도심 접근성에 따라 토지 이용자가 지불하고자 하는 최대 지대곡선이 형성되며, 상업-공업-주거-농업 순으로 도심에 입지한다는 이론.",
+                example: "서울 강남 CBD의 고밀 상업용지와 교외 저밀 주거지 지가격차."
+            },
+            {
+                id: "commercial_gentrification",
+                term: "상업 젠트리피케이션",
+                termEn: "Commercial Gentrification",
+                cat: "도시재생",
+                def: "저렴한 구도심이 청년 창업가와 예술가에 의해 장소 자산화(Place-making)된 후, 거대 대기업 자본 유입으로 임대료가 급등하여 기존 소상공인이 내몰리는 현상.",
+                example: "서울 성수동, 익선동, 연남동의 임대료 급등 및 둥지 내몰림."
+            },
+            {
+                id: "displacement",
+                term: "둥지 내몰림 (Displacement)",
+                termEn: "Involuntary Displacement",
+                cat: "도시재생",
+                def: "임대료 급등이나 전면 철거형 재개발로 인해 원주민, 세입자, 임차 상인이 지역 생태계에서 경제적·물리적으로 배제되어 쫓겨나는 현상.",
+                example: "젠트리피케이션 지역 내 임차 소상공인 이탈."
+            },
+            {
+                id: "rent_gap_theory",
+                term: "자본격차 이론 (Rent Gap Theory)",
+                termEn: "Rent Gap Theory (Neil Smith)",
+                cat: "도시재생",
+                def: "닐 스미스(Neil Smith)가 제안한 이론. 현재 토지 이용 상태의 실제 지대(Capitalized Ground Rent)와 최고 이용 시 잠재 지대(Potential Ground Rent) 간 격차가 커질 때 재투자와 젠트리피케이션이 발생합니다.",
+                example: "노후 공장 지대(성수동)의 상업 공간 전환 과정."
+            },
+            {
+                id: "growth_pole",
+                term: "거점 성장 이론",
+                termEn: "Growth Pole Theory (Perroux/Myrdal)",
+                cat: "국토 균형발전",
+                def: "개발 초기 자본과 인구를 특정 거점에 집중 투입하여 파급효과(Spread Effect)를 도모하는 이론. 그러나 과도할 경우 지방 인구를 흡수하는 역류효과(Backwash Effect)가 발생함.",
+                example: "수도권 과밀화 및 지방 혁신도시 공공기관 이전 정책."
+            },
+            {
+                id: "ris_system",
+                term: "지역 혁신 체계 (RIS)",
+                termEn: "Regional Innovation System",
+                cat: "국토 균형발전",
+                def: "지역 내 대학, 공공기관, 연구소, 기업 간 유기적 네트워크를 형성하여 지식 창출과 기술 혁신을 자체 유도하는 지역 공간 시스템.",
+                example: "나주 빛가람 혁신도시 한전 및 에너지 클러스터 구축."
+            },
+            {
+                id: "weber_leastcost",
+                term: "베버의 최소비용이론",
+                termEn: "Least Cost Theory (Weber)",
+                cat: "공업 입지론",
+                def: "공장 입지는 수송비, 노동비, 집적이익을 고려하여 생산 총비용이 최소가 되는 지점에 결정된다는 이론. 원료지향, 시장지향, 적환지 입지로 구분.",
+                example: "남동 임해 공업지역의 원료 수입 및 수출 수송비 절감 입지."
+            },
+            {
+                id: "break_of_bulk",
+                term: "적환지 입지 (Break-of-bulk Point)",
+                termEn: "Break-of-Bulk Point Location",
+                cat: "공업 입지론",
+                def: "해운과 육상 수송 등 수송 수단이 바뀌는 파쇄/적환 지점. 수송비 절감을 위해 원료 수입형 중화학 공업이 대거 입지함.",
+                example: "울산(석유화학/자동차), 포항(철강), 광양 공업지대."
+            },
+            {
+                id: "deindustrialization",
+                term: "탈공업화 (Deindustrialization)",
+                termEn: "Deindustrialization & Restructuring",
+                cat: "공업 입지론",
+                def: "전통 중후장대 제조업의 비중이 감소하고 지식 기반 3차·4차 산업으로 공간 구조가 전환되는 과정.",
+                example: "울산·포항 스마트 그린 산단 전환 및 R&D 고도화."
+            },
+            {
+                id: "spatiotemporal_compression",
+                term: "시공간 압축 (Spatiotemporal Compression)",
+                termEn: "Time-Space Compression (Harvey)",
+                cat: "교통 지리학",
+                def: "데이비드 하비(David Harvey)의 개념. KTX, GTX 등 고속 교통수단의 발달로 공간적 거리가 시간적으로 단축되어 일상 생활권이 급격히 확장되는 현상.",
+                example: "GTX-A 개통으로 동탄~서울 도심 20분대 이동."
+            },
+            {
+                id: "straw_effect",
+                term: "빨대 효과 (Straw Effect)",
+                termEn: "Straw Effect",
+                cat: "교통 지리학",
+                def: "고속 교통망 개통으로 인해 외곽 소도시의 경제, 의료, 상업 수요가 대도시 도심(서울 강남 등)으로 빨려 들어가는 현상.",
+                example: "지방 거점도시 환자가 수도권 대형병원으로 집중되는 현상."
+            },
+            {
+                id: "urban_sprawl",
+                term: "도시 외연적 확산 (Urban Sprawl)",
+                termEn: "Urban Sprawl / Leapfrogging",
+                cat: "도시 토지이용",
+                def: "도시 외곽으로 계획 없이 저밀도의 주거, 공장, 도로망이 무질서하게 확산되어 기반시설 비용과 환경 파괴를 유발하는 난개발 현상.",
+                example: "수도권 외곽 녹지 축에 난립하는 개별 입지 공장."
+            },
+            {
+                id: "compact_city",
+                term: "압축도시 (Compact City)",
+                termEn: "Compact City Model",
+                cat: "도시 토지이용",
+                def: "도시 외곽 확산을 억제하고 도심 및 대중교통 거점을 고밀 복합 개발하여 이동 거리를 줄이고 탄소 배출을 감소시키는 지속가능한 도시 모델.",
+                example: "대중교통 결절점 중심의 도심 재개발."
+            },
+            {
+                id: "tod_development",
+                term: "대중교통 지향 개발 (TOD)",
+                termEn: "Transit-Oriented Development",
+                cat: "도시 토지이용",
+                def: "철도역 등 대중교통 거점을 중심으로 반경 500m 이내 도보권에 주거, 상업, 업무 기능을 고밀 복합 배치하는 압축도시형 전략.",
+                example: "GTX 환승역 복합환승센터 및 역세권 고밀 개발."
+            },
+            {
+                id: "urban_heat_island",
+                term: "도시 열섬 현상 (UHI)",
+                termEn: "Urban Heat Island",
+                cat: "도시 기후학",
+                def: "불투수 아스팔트 확대, 인공열 배출, 고층 건물에 의한 통풍 저해로 도심 온도가 외곽 시골 지역보다 현저히 높아지는 기후 현상.",
+                example: "서울 도심 및 대구 분지의 여름철 열대야 현상."
+            },
+            {
+                id: "wind_corridor",
+                term: "바람길 숲 (Wind Corridor Forest)",
+                termEn: "Urban Wind Corridor Network",
+                cat: "도시 기후학",
+                def: "외곽 산지와 녹지에서 생성된 신선하고 찬 공기(Cold Air Drainage)가 도심 하천과 녹지축을 통해 도심 내부로 원활히 유동하도록 설계된 공간계획.",
+                example: "대구 팔공산 찬공기 유입축 및 서울 관악산~안양천 녹지축."
+            },
+            {
+                id: "conservation_renewal",
+                term: "보전형 도시재생 (Conservation Renewal)",
+                termEn: "Conservation & Rehabilitation Renewal",
+                cat: "도시재생",
+                def: "전면 철거와 달리 기존 역사·문화 자산과 주민 커뮤니티 생태계를 유지하면서 기반시설과 노후 주택을 단계적으로 수선하는 소규모 재생 기법.",
+                example: "서울 창신동, 부산 산복도로 마을 맞춤형 재생."
+            },
+            {
+                id: "compact_network",
+                term: "콤팩트-네트워크 도시 (Compact-Network)",
+                termEn: "Compact-Network City Strategy",
+                cat: "지방 소멸 대응",
+                def: "인구 감소 시대에 외곽 무분별 확장을 정지하고 중심 거점에 필수 서비스를 고밀 집적(Compact)한 후 광역 교통망(Network)으로 이웃 지역과 연결하는 축소도시 전략.",
+                example: "지방 소도시 의료·행정 거점 재편 및 광역 대중교통망 연계."
+            }
+        ];
+
+        /* ==========================================================================
+           2. ACADEMIC SCENARIOS DATABASE (10 Rich Scenarios)
+           ========================================================================== */
+        const SCENARIOS_DB = [
+            {
+                id: 1,
+                category: "수도권 공간구조",
+                focusNode: "node-pangyo",
+                focusRegion: "region-capital",
+                title: "1기 신도시와 2기 신도시(판교)의 공간구조 비교",
+                desc: "분당·일산 등 1기 신도시는 대도시 도심 주택난을 급격히 해소하기 위해 조성되었으나, 상업·일자리 자족용지가 부족해 서울 도심으로의 심각한 통근 교통혼잡을 유발했습니다. 판교 등 2기 신도시는 이를 보완하고자 첨단 테크노밸리를 배치했습니다. 지속가능한 수도권 공간구조를 형성하기 위한 최적의 거점 정책은?",
+                options: [
+                    {
+                        letter: "A",
+                        text: "(추천) 신도시 내부 자족용지(IT/R&D 산단) 비율을 대폭 확대하고 직주근접 복합용도지구를 지정한다.",
+                        type: "optimal",
+                        deltas: { balance: 15, economy: 15, qol: 10 },
+                        unlockedTerms: ["bed_town", "self_sufficient", "alonso_bidrent"],
+                        summary: "판교 테크노밸리와 같이 높은 자족용지 배치는 직주근접을 실현하여 교외 통근 교통혼잡비용을 대폭 절감합니다."
+                    },
+                    {
+                        letter: "B",
+                        text: "서울 도심과 연결되는 10차선 고속도로 및 지하철 노선만 무제한 확장하여 통근 수송력을 극대화한다.",
+                        type: "suboptimal",
+                        deltas: { balance: -5, economy: 10, qol: -5 },
+                        unlockedTerms: ["bed_town"],
+                        summary: "교통망만 유도하면 침상도시화가 심화되고 유입 유도 교통(Induced Traffic)으로 교통 혼잡이 재발합니다."
+                    },
+                    {
+                        letter: "C",
+                        text: "신도시 직가를 법적으로 강제 인하하여 순수 전원 주거 기능만을 수행하도록 분격화한다.",
+                        type: "warning",
+                        deltas: { balance: -10, economy: -10, qol: -10 },
+                        unlockedTerms: ["alonso_bidrent"],
+                        summary: "입찰지대 원리를 무시한 시장 개입은 자본 이탈과 세수 부족으로 신도시 쇠퇴를 초래합니다."
+                    },
+                    {
+                        letter: "D",
+                        text: "신도시 개발을 완전 중단하고 서울 구도심 고밀 초고층 재개발에만 전면 자본을 집중한다.",
+                        type: "suboptimal",
+                        deltas: { balance: -15, economy: 5, qol: -15 },
+                        unlockedTerms: ["burgess_concentric"],
+                        summary: "도심 과밀화가 과도해져 주거비 상승과 과밀 인프라 부하를 유발합니다."
+                    }
+                ],
+                theory: {
+                    heading: "수도권 공간구조와 자족성 지수 분석",
+                    content: `
+                        <p><strong>1. 버제스(Burgess) 및 호이트(Hoyt) 이론과 한국적 적용:</strong><br>
+                        1기 신도시(분당, 일산, 평촌 등)는 1980년대 말 서울의 극심한 주택 부족과 지가 상승에 대응하여 버제스 동심원이론의 '통근자 지대' 외곽에 급조되었습니다. 그러나 호이트의 선형이론처럼 경부축을 따라 과도한 교통량이 집중되며 심각한 교외 통근(Suburban Commuting) 기회비용을 초래했습니다.</p>
+                        <br>
+                        <p><strong>2. 판교 테크노밸리의 학술적 의의:</strong><br>
+                        알론소(Alonso)의 입찰지대이론에 따르면, 도심 접근성이 뛰어난 위치일수록 높은 토지주기를 감당할 수 있는 고부가가치 산업이 입지해야 합니다. 판교는 단순 주거지가 아닌 고부가가치 IT·R&D 융합클러스터를 내부 배치함으로써 자족성 지수(Self-sufficiency ratio)를 획기적으로 높였습니다. 이는 모도시(서울 CBD)로의 일방향 통근 흐름을 다심핵 구조(Multi-nucleated structure)로 전환시킨 대표적 성공 사례입니다.</p>
+                    `
+                }
+            },
+            {
+                id: 2,
+                category: "도시재생 뉴딜",
+                focusNode: "node-seongsu",
+                focusRegion: "region-capital",
+                title: "성수동·익선동의 상업 젠트리피케이션과 둥지 내몰림 대응",
+                desc: "성수동, 익선동 등 서울 구도심의 노후 공장 및 한옥 지대가 청년 창업가와 예술가들에 의해 장소 자산화(Place-making)된 후, 거대 자본 유입과 임대료 급등으로 원주민과 소상공인이 내몰리는 상업 젠트리피케이션이 고조되고 있습니다. 포용적 도시재생 전략은?",
+                options: [
+                    {
+                        letter: "A",
+                        text: "(추천) 지자체·임대인·임차인 간 '지역상생협약' 체결, 젠트리피케이션 방지 조례 제정 및 공공안심상가를 제공한다.",
+                        type: "optimal",
+                        deltas: { balance: 10, economy: 10, qol: 15 },
+                        unlockedTerms: ["commercial_gentrification", "displacement", "rent_gap_theory"],
+                        summary: "장소의 독창성(Authenticity)과 소상공인을 보호하여 장기적으로 상권의 지속가능성을 확보합니다."
+                    },
+                    {
+                        letter: "B",
+                        text: "구도심 전체를 전면 철거하고 대형 럭셔리 쇼핑몰과 고층 주상복합 단지로 전면 재개발한다.",
+                        type: "warning",
+                        deltas: { balance: -10, economy: 15, qol: -15 },
+                        unlockedTerms: ["displacement"],
+                        summary: "기존 커뮤니티와 역사적 장소 자산이 완전히 파괴되며 완벽한 둥지 내몰림이 발생합니다."
+                    },
+                    {
+                        letter: "C",
+                        text: "구도심 상업 지역의 모든 임대료를 법적으로 완전 동결하고 외부 관광객 진입을 통제한다.",
+                        type: "suboptimal",
+                        deltas: { balance: -5, economy: -15, qol: -5 },
+                        unlockedTerms: ["commercial_gentrification"],
+                        summary: "상권 활력이 급격히 침체되어 건물주의 정비 투자가 중단되고 상권 음폐화가 초래됩니다."
+                    },
+                    {
+                        letter: "D",
+                        text: "시장 자율 메커니즘에 완전 위임하여 임대료 상승에 따른 업종 자연 도태 및 대기업 진입을 방임한다.",
+                        type: "suboptimal",
+                        deltas: { balance: -5, economy: 5, qol: -10 },
+                        unlockedTerms: ["rent_gap_theory"],
+                        summary: "프랜차이즈의 균일화(Standardization)로 장소성이 상실되어 결국 상권 전체가 쇠퇴(Blandscapes)합니다."
+                    }
+                ],
+                theory: {
+                    heading: "상업 젠트리피케이션과 닐 스미스의 자본격차 이론",
+                    content: `
+                        <p><strong>1. 자본격차 이론(Rent Gap Theory):</strong><br>
+                        닐 스미스(Neil Smith)에 따르면, 젠트리피케이션은 현재 이용 상태에서의 '실제 지대(Capitalized Ground Rent)'와 최선 이용 시 달성 가능한 '잠재 지대(Potential Ground Rent)' 간의 격차가 극대화될 때 자본이 유입되며 발생합니다. 성수동의 노후 준공업지역은 저렴한 임대료 덕분에 문화예술 장소성을 확보했으나, 자본 격차를 노린 대형 부동산 자본이 침입하면서 임대료가 폭등했습니다.</p>
+                        <br>
+                        <p><strong>2. 한국형 상업 젠트리피케이션의 특수성:</strong><br>
+                        서구의 주거 젠트리피케이션과 달리 한국은 '상업 젠트리피케이션(Commercial Gentrification)' 형태가 강하게 나타납니다. 임차 소상공인의 둥지 내몰림(Displacement)은 상권의 고유한 정체성(Authenticity)을 훼손하여 젠트리피케이션의 자멸적 결과(Self-destruction)를 초래합니다. 따라서 성수동 상생협약 및 성동구 공공안심상가 모델은 장소 자산(Place Asset)을 지속적으로 보존하는 선진적 정책으로 평가받습니다.</p>
+                    `
+                }
+            },
+            {
+                id: 3,
+                category: "국토 균형발전",
+                focusNode: "node-sejong",
+                focusRegion: "region-chungcheong",
+                title: "세종 행정도시 및 혁신도시 공공기관 지방 이전",
+                desc: "수도권 과밀화 및 지방 소멸 위험에 대응하기 위해 수도권 소재 153개 공공기관을 전국 10개 혁신도시로 이전하고 세종 행정중심복합도시를 건설했습니다. 혁신도시의 지역 파급효과(Spillover Effect)를 극대화할 자문책은?",
+                options: [
+                    {
+                        letter: "A",
+                        text: "(추천) 이전 공공기관-지역 대학-향토 기업 간 산학연 클러스터(RIS)를 구축하고 자생적 혁신 생태계를 조성한다.",
+                        type: "optimal",
+                        deltas: { balance: 20, economy: 15, qol: 10 },
+                        unlockedTerms: ["growth_pole", "ris_system"],
+                        summary: "공공기관 이전을 기점으로 지역 혁신 체계(RIS)가 작동하여 지식 기반의 자생적 성장이 유도됩니다."
+                    },
+                    {
+                        letter: "B",
+                        text: "이전 공공기관 직원들을 위한 대규모 수도권 주말 셔틀버스 수송망 지원을 영구 확대한다.",
+                        type: "warning",
+                        deltas: { balance: -10, economy: -5, qol: 5 },
+                        unlockedTerms: ["growth_pole"],
+                        summary: "혁신도시가 주말에 비어있는 '나홀로 섬(Island)'으로 전락하여 지역 상권 활성화 효과가 차단됩니다."
+                    },
+                    {
+                        letter: "C",
+                        text: "혁신도시 인근 개발제한구역을 모두 해제하여 외곽 아파트 단지만 저밀도로 무한 확산시킨다.",
+                        type: "suboptimal",
+                        deltas: { balance: 0, economy: -5, qol: -10 },
+                        unlockedTerms: ["growth_pole"],
+                        summary: "혁신도시 내부 중심성 형성이 저해되고 원도심 인구를 흡수하는 부작용이 발생합니다."
+                    },
+                    {
+                        letter: "D",
+                        text: "단일 공공기관 건물만 외딴곳에 건설하고 인접 상업·문화 인프라 투자를 일체 차단한다.",
+                        type: "warning",
+                        deltas: { balance: -15, economy: -10, qol: -15 },
+                        unlockedTerms: ["ris_system"],
+                        summary: "혁신 거점으로서의 파급효과가 전혀 나타나지 않습니다."
+                    }
+                ],
+                theory: {
+                    heading: "거점 성장 이론과 지역 혁신 체계(RIS)",
+                    content: `
+                        <p><strong>1. 누적적 인과관계와 거점 성장 이론:</strong><br>
+                        미르달(Myrdal)의 누적적 인과관계론과 히르슈만(Hirschman)의 극화/파급효과 이론에 의하면, 수도권은 인구와 자본을 지속 흡수하는 역류효과(Backwash Effect)가 강하게 작용합니다. 혁신도시 정책은 지방에 인위적 성장 거점(Growth Pole)을 형성하여 지방으로의 파급효과(Spread Effect)를 유도하려는 시도입니다.</p>
+                        <br>
+                        <p><strong>2. 지역 혁신 체계(RIS)의 중요성:</strong><br>
+                        공공기관의 물리적 이전만으로는 '공공기관 외딴섬' 현상을 극복하기 어렵습니다. 나주 빛가람 혁신도시(한국전력 중심 에너지 클러스터)처럼 이전 기관의 핵심 역량과 지역 대학, 연구소, 향토 산업을 유기적으로 연계하는 지역 혁신 체계(RIS)를 구축해야만 지속가능한 내생적 성장(Endogenous Growth)이 가능합니다.</p>
+                    `
+                }
+            },
+            {
+                id: 4,
+                category: "공업 입지론",
+                focusNode: "node-ulsan",
+                focusRegion: "region-yeongnam",
+                title: "남동 임해 공업지역(울산·포항)의 탈공업화와 스마트 산단 전환",
+                desc: "울산(석유화학/자동차), 포항(철강) 등 남동 임해 공업지역은 한국 경제 성장의 견인차였으나, 글로벌 경기 변동, 탈탄소 규제 및 기술 탈공업화로 성장이 정체되고 있습니다. 남동 임해 공업지역의 공간 restructuring 전략은?",
+                options: [
+                    {
+                        letter: "A",
+                        text: "(추천) 스마트 그린 산업단지 전환, 수소·이차전지 친환경 신산업 유치 및 R&D 고도화를 추진한다.",
+                        type: "optimal",
+                        deltas: { balance: 10, economy: 20, qol: 10 },
+                        unlockedTerms: ["weber_leastcost", "break_of_bulk", "deindustrialization"],
+                        summary: "입지적 이점(적환지)을 살리면서 4차 산업혁명 기반의 고부가가치 스마트 제조 거점으로 전환합니다."
+                    },
+                    {
+                        letter: "B",
+                        text: "20세기 입지 구조를 그대로 유지하고 노후 화석연료 공장 설비 보조금 지급에만 집중한다.",
+                        type: "suboptimal",
+                        deltas: { balance: -5, economy: -10, qol: -10 },
+                        unlockedTerms: ["weber_leastcost"],
+                        summary: "탄소중립 시대에 글로벌 경쟁력을 상실하고 노후 산단 쇠퇴를 가속화합니다."
+                    },
+                    {
+                        letter: "C",
+                        text: "공장 부지를 전면 폐쇄하고 입지적 수송 특성과 무관하게 대규모 전원주택 단지로 전환한다.",
+                        type: "warning",
+                        deltas: { balance: -15, economy: -20, qol: -5 },
+                        unlockedTerms: ["break_of_bulk"],
+                        summary: "국가 핵심 제조업 기반이 붕괴하고 대규모 고용 사태가 야기됩니다."
+                    },
+                    {
+                        letter: "D",
+                        text: "노동자 임금을 삭감하여 단순 저임금 노동집약적 단순 공장으로 업종을 하향 전환한다.",
+                        type: "warning",
+                        deltas: { balance: -10, economy: -15, qol: -20 },
+                        unlockedTerms: ["deindustrialization"],
+                        summary: "청년층 인구 유출이 극심해지고 지역 인구 소멸이 가속화됩니다."
+                    }
+                ],
+                theory: {
+                    heading: "베버의 입지론과 남동 임해 공업지역의 restructuring",
+                    content: `
+                        <p><strong>1. 베버(Weber)의 최소비용이론과 적환지 입지:</strong><br>
+                        알프레드 베버에 따르면 공업 입지는 수송비, 노동비, 집적이익에 의해 결정됩니다. 남동 임해 공업지역(울산, 포항, 광양)은 해외 원료 수입과 제품 수출에 절대적으로 유리한 '적환지(Break-of-bulk point)' 입지 특성을 지녀 중화학 공업 단지로 대성공을 거두었습니다.</p>
+                        <br>
+                        <p><strong>2. 4차 산업혁명과 기술 지질학적 재구조화:</strong><br>
+                        포스트 포디즘(Post-Fordism) 시대에는 단순 수송비 절감보다 지식, R&D, 친환경 기술 네트워크가 더 중요해집니다. 탈공업화(Deindustrialization) 리스크에 대응하기 위해 울산·포항 산단을 수소 생태계, 이차전지, 스마트 팩토리가 결합된 스마트 그린 산단으로 고도화하는 것이 지리적 필수 과제입니다.</p>
+                    `
+                }
+            },
+            {
+                id: 5,
+                category: "교통 지리학",
+                focusNode: "node-seoul",
+                focusRegion: "region-capital",
+                title: "GTX(수도권 광역급행철도) 개통과 수도권 초광역화",
+                desc: "GTX-A, B, C 노선 도입으로 동탄, 파주, 송도 등 수도권 외곽에서 서울 도심까지 20분대 이동이 가능해지는 시공간 압축(Spatiotemporal Compression) 현상이 심화되고 있습니다. 수도권 쏠림 완화와 광역교통 이점을 양립할 전략은?",
+                options: [
+                    {
+                        letter: "A",
+                        text: "(추천) GTX 환승역을 중심으로 TOD 고밀 복합 거점을 조성하고, 비수도권 광역철도(x-TX)망도 동시 확충한다.",
+                        type: "optimal",
+                        deltas: { balance: 15, economy: 15, qol: 10 },
+                        unlockedTerms: ["spatiotemporal_compression", "straw_effect", "tod_development"],
+                        summary: "GTX 거점의 자족성을 높이고 비수도권에도 광역 교통 복지를 확장하여 국토 균형을 달성합니다."
+                    },
+                    {
+                        letter: "B",
+                        text: "GTX 노선 이용 요금을 10배 인상하여 일반 시민들의 수도권 이동 통근을 최대한 억제한다.",
+                        type: "warning",
+                        deltas: { balance: -10, economy: -10, qol: -20 },
+                        unlockedTerms: ["spatiotemporal_compression"],
+                        summary: "대중교통의 공공성을 훼손하고 서민 출퇴근 고통을 가중시킵니다."
+                    },
+                    {
+                        letter: "C",
+                        text: "모든 국가 철도 예산을 GTX 추가 노선 확충에만 100% 올인하고 지방 철도는 폐선한다.",
+                        type: "suboptimal",
+                        deltas: { balance: -20, economy: 10, qol: -10 },
+                        unlockedTerms: ["straw_effect"],
+                        summary: "지방 인구와 자본이 서울로 급격히 흡수되는 '빨대 효과(Straw Effect)'가 극대화됩니다."
+                    },
+                    {
+                        letter: "D",
+                        text: "GTX 역세권 주변 개발을 완전 금지하고 단순히 단일 철도 승강장으로만 둔다.",
+                        type: "suboptimal",
+                        deltas: { balance: -5, economy: -10, qol: -5 },
+                        unlockedTerms: ["tod_development"],
+                        summary: "교통 결절점의 투자 효율성이 크게 저하되고 난개발 통근이 지속됩니다."
+                    }
+                ],
+                theory: {
+                    heading: "시공간 압축과 빨대 효과(Straw Effect)",
+                    content: `
+                        <p><strong>1. 데이비드 하비의 시공간 압축(Time-Space Compression):</strong><br>
+                        고속 교통망의 발달은 시공간 격차를 좁혀 일상 공간 범위를 비약적으로 넓힙니다. GTX는 외곽 지역 주민의 통근 편의를 높이지만, 동시에 수도권의 공간적 범위를 경기 외곽 및 충청권 북부까지 연장시키는 수도권 초광역화를 초래합니다.</p>
+                        <br>
+                        <p><strong>2. 빨대 효과(Straw Effect) 대응 방안:</strong><br>
+                        고속 교통망 개통은 지방 소도시의 소비, 의료, 교육 기능이 대도시(서울 강남)로 빨려 들어가는 빨대 효과를 동반합니다. 이에 대응하기 위해 GTX 주요 환승역에 대중교통 지향 개발(TOD)을 적용해 역세권 내부 자족성을 키우고, 웅상·창원·대구 등 비수도권에도 광역 급행 철도망을 균형 있게 구축해야 합니다.</p>
+                    `
+                }
+            },
+            {
+                id: 6,
+                category: "도시 토지이용",
+                focusNode: "node-seoul",
+                focusRegion: "region-capital",
+                title: "난개발(Sprawl) 방지와 압축도시(Compact City) & 그린벨트",
+                desc: "수도권 외곽의 무분별한 난개발(Urban Sprawl)로 인해 녹지가 파손되고 인프라 공급 비용이 급증하고 있습니다. 한편 그린벨트(개발제한구역)는 도시 외연 확산을 물리적으로 막지만 도심 지가 상승을 유발합니다. 지속가능한 토지이용 정책은?",
+                options: [
+                    {
+                        letter: "A",
+                        text: "(추천) 그린벨트의 환경적 가치는 철저히 보존하되, 기존 시가지 대중교통 거점을 압축도시(Compact City)로 고밀 개발한다.",
+                        type: "optimal",
+                        deltas: { balance: 10, economy: 10, qol: 15 },
+                        unlockedTerms: ["urban_sprawl", "compact_city", "tod_development"],
+                        summary: "토지 이용 효율성을 극대화하면서 그린벨트의 환경생태적 차단 기능과 압축도시의 이점을 조화시킵니다."
+                    },
+                    {
+                        letter: "B",
+                        text: "그린벨트를 전면 해제하여 도시 외곽 임야와 농지에 무제한 아파트 및 공장 개별 입지를 허용한다.",
+                        type: "warning",
+                        deltas: { balance: -15, economy: 5, qol: -20 },
+                        unlockedTerms: ["urban_sprawl"],
+                        summary: "심각한 도시 난개발(Sprawl)과 환경 파괴, 도로·상하수도 비용 인프라 폭탄이 초래됩니다."
+                    },
+                    {
+                        letter: "C",
+                        text: "기존 도심 내부의 모든 정비 사업을 완전 금지하고 도시 외곽 50km 지점에 독립 소도시를 격리 건설한다.",
+                        type: "suboptimal",
+                        deltas: { balance: -10, economy: -10, qol: -10 },
+                        unlockedTerms: ["compact_city"],
+                        summary: "도심 쇠퇴와 외곽 교외화의 도약식 개발(Leapfrog) 부작용이 가중됩니다."
+                    },
+                    {
+                        letter: "D",
+                        text: "난개발 구역에 도로 및 기반시설 공급을 완전 중단하고 주민 행동을 완전 방치한다.",
+                        type: "warning",
+                        deltas: { balance: -10, economy: -15, qol: -20 },
+                        unlockedTerms: ["urban_sprawl"],
+                        summary: "도시 외곽 슬럼화와 생활 안전 위협이 심화됩니다."
+                    }
+                ],
+                theory: {
+                    heading: "도시 난개발, 개발제한구역 및 압축도시 모델",
+                    content: `
+                        <p><strong>1. 난개발(Urban Sprawl)과 하워드의 전원도시 전통:</strong><br>
+                        도시 외곽으로 자동차 중심의 저밀도·무계획적 외연 확산(Sprawl)이 일어나면 도로, 상하수도 공급 등 공공재정 비용이 비효율적으로 급증합니다. 한국의 개발제한구역(Greenbelt)은 하워드(Ebenezer Howard)의 전원도시 외곽 녹지대에서 유래되어 외연 확산을 방지하는 유효한 물리적 장치로 작동했습니다.</p>
+                        <br>
+                        <p><strong>2. 압축도시(Compact City) 패러다임:</strong><br>
+                        그린벨트로 인한 도심 공급 부족 현상을 해결하기 위한 현대 도시계획의 대안은 '압축도시(Compact City)'입니다. 기존 도심과 광역 교통 결절점(TOD)의 용적률을 합리적으로 높여 고밀 복합 이용을 유도함으로써, 무분별한 외곽 산림 훼손을 막고 이산화탄소 배출을 최소화합니다.</p>
+                    `
+                }
+            },
+            {
+                id: 7,
+                category: "도시 기후학",
+                focusNode: "node-daegu",
+                focusRegion: "region-yeongnam",
+                title: "도시 열섬(UHI) 현상 극복과 바람길 숲 조성",
+                desc: "대구 분지 및 서울 도심은 불투수 아스팔트 피복 확대, 인공열 배출, 초고층 병풍 아파트 신축으로 여름철 기온이 외곽보다 수 도 이상 높은 도시 열섬(Urban Heat Island) 현상과 열대야가 극심합니다. 기후 친화적 도시계획은?",
+                options: [
+                    {
+                        letter: "A",
+                        text: "(추천) 외곽 산지의 찬 공기(Cold Air)를 도심으로 유입시키는 바람길 숲을 조성하고 하천 녹지축을 확충한다.",
+                        type: "optimal",
+                        deltas: { balance: 5, economy: 5, qol: 20 },
+                        unlockedTerms: ["urban_heat_island", "wind_corridor"],
+                        summary: "기후지리학적 통풍 구조를 확보하여 도심 기온을 낮추고 열섬 현상을 획기적으로 완화합니다."
+                    },
+                    {
+                        letter: "B",
+                        text: "도심 하천을 전면 콘크리트로 복개하여 대형 도로 및 주차장으로 전환한다.",
+                        type: "warning",
+                        deltas: { balance: -5, economy: 5, qol: -20 },
+                        unlockedTerms: ["urban_heat_island"],
+                        summary: "수변의 증발냉각 효과가 사라지고 도심 열섬 현상이 극도로 악화됩니다."
+                    },
+                    {
+                        letter: "C",
+                        text: "바람 흐름을 막는 초고층 병풍 아파트를 외곽 산지와 도심 사이에 빽빽하게 일렬 신축한다.",
+                        type: "suboptimal",
+                        deltas: { balance: -5, economy: 10, qol: -15 },
+                        unlockedTerms: ["wind_corridor"],
+                        summary: "찬 공기 유입 경로가 봉쇄되어 도심 내부 열 정체 현상이 심화됩니다."
+                    },
+                    {
+                        letter: "D",
+                        text: "도심 주요 광장에 대형 야외 에어컨 냉방 탑을 대량 설치하여 전기 냉방에 의존한다.",
+                        type: "suboptimal",
+                        deltas: { balance: 0, economy: -10, qol: -10 },
+                        unlockedTerms: ["urban_heat_island"],
+                        summary: "에어컨 실외기 인공열 배출로 도심 전체 온도는 오히려 더욱 상승하는 악순환이 발생합니다."
+                    }
+                ],
+                theory: {
+                    heading: "도시 미기후 분석과 바람길 숲(Wind Corridor) 매핑",
+                    content: `
+                        <p><strong>1. 도시 열섬(Urban Heat Island)의 기후학적 원인:</strong><br>
+                        도심의 높은 반사율(Albedo) 감소, 콘크리트 및 아스팔트의 높은 열용량, 빌딩 숲에 의한 질풍 저해, 자동차·건물 인공열 배출은 도심을 고온의 열섬으로 만듭니다. 특히 대구 분지나 서울 도심은 열 정체 현상이 현저합니다.</p>
+                        <br>
+                        <p><strong>2. 바람길 숲(Wind Corridor)의 기후지리학 기법:</strong><br>
+                        독일 슈투트가르트의 바람길 기법을 응용한 정책으로, 야간에 외곽 산지(서울 관악산·북한산, 대구 팔공산)에서 냉각되어 내려오는 산곡풍과 찬 공기류(Cold Air Drainage)를 도심 하천과 녹지 통로를 따라 유도합니다. 이는 도심 미세먼지를 배출하고 열섬을 완화하는 환경지리학의 핵심 응용 분야입니다.</p>
+                    `
+                }
+            },
+            {
+                id: 8,
+                category: "도시재생",
+                focusNode: "node-seoul",
+                focusRegion: "region-capital",
+                title: "보전형 도시재생 vs 전면 철거형 재개발",
+                desc: "서울 창신동, 세운상가 주변, 부산 산복도로 등 역사 구도심의 노후 주거·상업 공간을 두고 전면 철거 후 고층 아파트 단지 신축 방안과 역사·소상공인 생태계 보전 재생 방안이 첨예하게 대립하고 있습니다. 최선의 조율책은?",
+                options: [
+                    {
+                        letter: "A",
+                        text: "(추천) 역사문화 자산과 소상공인 생태계를 보전하면서, 도로·주차장 등 노후 인프라를 단계적으로 개선하는 맞춤형 수선 재생을 추진한다.",
+                        type: "optimal",
+                        deltas: { balance: 10, economy: 10, qol: 15 },
+                        unlockedTerms: ["conservation_renewal", "displacement"],
+                        summary: "주민 재정착률을 높이고 원도심의 독창적 장소 자산과 인프라를 균형 있게 정비합니다."
+                    },
+                    {
+                        letter: "B",
+                        text: "기존 세입자 대책 없이 지역 전체를 전면 철거하고 고가 획일적 아파트 단지로 전면 교체한다.",
+                        type: "suboptimal",
+                        deltas: { balance: -10, economy: 15, qol: -15 },
+                        unlockedTerms: ["displacement"],
+                        summary: "원주민 재정착률이 15% 미만으로 떨어지고 역사 장소성이 완전히 소멸합니다."
+                    },
+                    {
+                        letter: "C",
+                        text: "안전 위험과 노후화에도 불구하고 어떠한 공공 지원이나 수선 없이 구도심을 완전 방치한다.",
+                        type: "warning",
+                        deltas: { balance: -10, economy: -15, qol: -20 },
+                        unlockedTerms: ["conservation_renewal"],
+                        summary: "주거 환경 악화와 화재 등 안전 사고 위험이 심화됩니다."
+                    },
+                    {
+                        letter: "D",
+                        text: "역사 건축물을 전면 파괴하고 대형 8차선 자동차 전용도로로 관통시킨다.",
+                        type: "warning",
+                        deltas: { balance: -15, economy: -5, qol: -20 },
+                        unlockedTerms: ["conservation_renewal"],
+                        summary: "도시 보행성이 파괴되고 보전 자산이 손상됩니다."
+                    }
+                ],
+                theory: {
+                    heading: "전면 철거 패러다임에서 포용적 보전재생으로의 전환",
+                    content: `
+                        <p><strong>1. 전면 철거형 재개발(Demolition Redevelopment)의 한계:</strong><br>
+                        과거의 전면 철거 방식은 물리적 용적률과 주택 공급량을 극대화하지만, 원주민 및 세입자 내몰림, 커뮤니티 파괴, 역사 장소성(Sense of Place)의 전면 상실이라는 치명적 부작용을 낳았습니다.</p>
+                        <br>
+                        <p><strong>2. 보전형 도시재생(Conservation Renewal)의 가치:</strong><br>
+                        현대 도시지리학은 장소 자산(Place Asset)과 사회적 자본의 가치를 중시합니다. 소규모 맞춤형 수선 재생은 소소한 도로 확장, 쌈지공원 조성, 골목길 정비를 통해 주거 환경을 실질적으로 개선하면서 기존 소상공인과 주민들의 정주권을 보장하는 지속가능한 대안입니다.</p>
+                    `
+                }
+            },
+            {
+                id: 9,
+                category: "지방 소멸 대응",
+                focusNode: "node-naju",
+                focusRegion: "region-honam",
+                title: "지방 중소도시 소멸과 콤팩트-네트워크 도시 전략",
+                desc: "인구 감소가 가속화되는 지방 중소도시에서 행정·의료·상업 인프라를 과거처럼 외곽 전체로 분산 제공하면 지자체 재정이 고갈됩니다. 인구 감소 시대의 지방 도시 공간 restructuring 전략은?",
+                options: [
+                    {
+                        letter: "A",
+                        text: "(추천) 중심 거점에 의료·행정·상업 기능을 집약(Compact)하고, 외곽 거점과는 광역 교통망(Network)으로 연계한다.",
+                        type: "optimal",
+                        deltas: { balance: 20, economy: 10, qol: 15 },
+                        unlockedTerms: ["compact_network"],
+                        summary: "최소 요구치(Threshold)를 유지하면서 재정 효율성과 주민 기본권을 동시에 보장합니다."
+                    },
+                    {
+                        letter: "B",
+                        text: "인구가 급감하는 모든 외곽 읍·면 지역마다 대형 병원과 시청 분소를 무제한 중복 신설한다.",
+                        type: "warning",
+                        deltas: { balance: -15, economy: -20, qol: -10 },
+                        unlockedTerms: ["compact_network"],
+                        summary: "지자체 재정이 즉각 파산하고 공공 서비스의 질이 하향 평준화됩니다."
+                    },
+                    {
+                        letter: "C",
+                        text: "지방 소도시의 모든 공공서비스를 즉시 철수하고 주민들의 자발적 상경 이주만을 방임한다.",
+                        type: "warning",
+                        deltas: { balance: -25, economy: -15, qol: -25 },
+                        unlockedTerms: ["compact_network"],
+                        summary: "국토 불균형이 극대화되고 지방 소멸이 가속화됩니다."
+                    },
+                    {
+                        letter: "D",
+                        text: "시청과 대형 병원을 도시 최외곽 산악지대로 이전하여 외곽 개발 구역 확산을 강행한다.",
+                        type: "suboptimal",
+                        deltas: { balance: -10, economy: -10, qol: -15 },
+                        unlockedTerms: ["compact_network"],
+                        summary: "접근성이 악화되어 노약자 및 시민들의 이동 고통이 배가됩니다."
+                    }
+                ],
+                theory: {
+                    heading: "크리스탈러의 중심지 이론과 축소도시(Shrinking City)",
+                    content: `
+                        <p><strong>1. 중심지 이론(Central Place Theory)의 변용:</strong><br>
+                        크리스탈러(Christaller)에 따르면 중심지가 유지되기 위해서는 서비스의 '재화의 도달 범위(Range of Goods)'와 '최소 요구치(Threshold Value)'가 확보되어야 합니다. 인구 감소 지역에서는 최소 요구치가 미달하여 의료·상업 서비스가 붕괴됩니다.</p>
+                        <br>
+                        <p><strong>2. 콤팩트-네트워크 도시(Compact-Network City):</strong><br>
+                        축소도시(Shrinking City) 패러다임에서는 무리한 외연 확장을 포기하고 핵심 도심 거점에 필수 서비스 인프라를 고밀 집적(Compact)한 뒤, 수요 응답형 버스(DRT) 등 대중교통 네트워크(Network)로 외곽 마을을 연결함으로써 인구 감소 시대의 정주 여건을 선진적으로 재편합니다.</p>
+                    `
+                }
+            },
+            {
+                id: 10,
+                category: "산업 전환",
+                focusNode: "node-ulsan",
+                focusRegion: "region-yeongnam",
+                title: "해안 공업도시의 해양 리조트/문화 복합 재생과 장소 마케팅",
+                desc: "조선·해양 산업의 정체를 겪는 남해안 공업도시(통영, 거제 등)가 노후 폐조선소 부지와 유휴 수변 공간을 새로운 성장 동력으로 전환하려 합니다. 입지 자산을 활용한 탈공업화 재생 전략은?",
+                options: [
+                    {
+                        letter: "A",
+                        text: "(추천) 폐조선소 산업유산을 리모델링하여 융복합 문화창의거점 및 친환경 해양관광 복합단지로 탈바꿈한다.",
+                        type: "optimal",
+                        deltas: { balance: 15, economy: 15, qol: 15 },
+                        unlockedTerms: ["deindustrialization"],
+                        summary: "산업 유산의 장소 자산화와 장소 마케팅을 통해 서비스·관광 융합형 산업 구조 전환을 이룹니다."
+                    },
+                    {
+                        letter: "B",
+                        text: "노후 폐조선소 공간을 흉물로 방치하고 어떠한 정비나 자본 유입도 차단한다.",
+                        type: "warning",
+                        deltas: { balance: -10, economy: -15, qol: -15 },
+                        unlockedTerms: ["deindustrialization"],
+                        summary: "수변 공간이 오염 슬럼화되고 청년 유출이 가속화됩니다."
+                    },
+                    {
+                        letter: "C",
+                        text: "해안가 전면을 추가 매립하여 오직 20세기형 중공업 공장용지로만 원상 고수한다.",
+                        type: "suboptimal",
+                        deltas: { balance: -5, economy: -5, qol: -10 },
+                        unlockedTerms: ["deindustrialization"],
+                        summary: "산업 다변화 타이밍을 놓치고 해양 생태계가 훼손됩니다."
+                    },
+                    {
+                        letter: "D",
+                        text: "산업 유산을 파괴하고 해당 해안 부지를 폐기물 매립장으로 활용한다.",
+                        type: "warning",
+                        deltas: { balance: -20, economy: -20, qol: -25 },
+                        unlockedTerms: ["deindustrialization"],
+                        summary: "지역 해양 관광 자산과 도시 가치가 전면 상실됩니다."
+                    }
+                ],
+                theory: {
+                    heading: "탈공업화 도시의 장소 마케팅(Place Marketing)",
+                    content: `
+                        <p><strong>1. 포스트 포디즘과 문화 지형 변용:</strong><br>
+                        소비 중심의 포스트 포디즘 시대에는 유휴 산업 시설(Industrial Heritage)이 독창적인 장소성을 창출하는 자산으로 재조명됩니다. 스페인 빌바오의 구겐하임 효과처럼 노후 폐조선소 부지의 문화 복합 재생은 도시 브랜드를 쇄신합니다.</p>
+                        <br>
+                        <p><strong>2. 지대 창출 구조의 다변화:</strong><br>
+                        전통 제조업 지대에서 문화·관광·디지털 융복합 지대로의 성공적 전환은 침체된 해안 공업도시의 경제 생태계에 새로운 지대(Ground Rent)와 고용을 창출하는 핵심 수단이 됩니다.</p>
+                    `
+                }
+            }
+        ];
+
+        /* ==========================================================================
+           3. AUDIO SYNTHESIZER ENGINE (Web Audio API)
+           ========================================================================== */
+        class AudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) {
+                        this.ctx = new AudioCtx();
+                    }
+                }
+            }
+
+            playChord(freqs, duration = 0.4, type = "sine") {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                freqs.forEach(freq => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + duration);
+                });
+            }
+
+            playOptimal() {
+                // Ascending bright chime (C5 - E5 - G5 - C6)
+                this.playChord([523.25, 659.25, 783.99, 1046.50], 0.5, "triangle");
+            }
+
+            playSuboptimal() {
+                // Muted neutral chord (E4 - B4)
+                this.playChord([329.63, 493.88], 0.35, "sine");
+            }
+
+            playWarning() {
+                // Low thud / buzz (F3 -> C3)
+                this.playChord([174.61, 130.81], 0.4, "sawtooth");
+            }
+
+            playVictory() {
+                // Major Fanfare
+                this.playChord([523.25, 659.25, 783.99, 1046.50, 1318.51], 0.8, "triangle");
+            }
+        }
+
+        const audio = new AudioEngine();
+
+        /* ==========================================================================
+           4. GAME STATE MANAGER & LOCAL STORAGE
+           ========================================================================== */
+        const STORAGE_KEY = "korean_urban_geo_tycoon_v1";
+
+        let gameState = {
+            currentIndex: 0,
+            stats: {
+                balance: 50,
+                economy: 50,
+                qol: 50
+            },
+            completedScenarios: [],
+            unlockedTerms: new Set(),
+            soundMuted: false
+        };
+
+        function saveGameState() {
+            const dataToSave = {
+                currentIndex: gameState.currentIndex,
+                stats: gameState.stats,
+                completedScenarios: gameState.completedScenarios,
+                unlockedTerms: Array.from(gameState.unlockedTerms),
+                soundMuted: gameState.soundMuted
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+        }
+
+        function loadGameState() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    gameState.currentIndex = parsed.currentIndex || 0;
+                    gameState.stats = parsed.stats || { balance: 50, economy: 50, qol: 50 };
+                    gameState.completedScenarios = parsed.completedScenarios || [];
+                    gameState.unlockedTerms = new Set(parsed.unlockedTerms || []);
+                    gameState.soundMuted = !!parsed.soundMuted;
+                    audio.muted = gameState.soundMuted;
+                } catch (e) {
+                    console.error("Failed to load save state:", e);
+                }
+            }
+        }
+
+        /* ==========================================================================
+           5. UI RENDERING & EVENT HANDLERS
+           ========================================================================== */
+        // DOM Elements
+        const statBalanceVal = document.getElementById("stat-balance-val");
+        const statBalanceText = document.getElementById("stat-balance-text");
+        const statBalanceBar = document.getElementById("stat-balance-bar");
+
+        const statEconomyVal = document.getElementById("stat-economy-val");
+        const statEconomyText = document.getElementById("stat-economy-text");
+        const statEconomyBar = document.getElementById("stat-economy-bar");
+
+        const statQolVal = document.getElementById("stat-qol-val");
+        const statQolText = document.getElementById("stat-qol-text");
+        const statQolBar = document.getElementById("stat-qol-bar");
+
+        const statMasteryVal = document.getElementById("stat-mastery-val");
+        const statMasteryText = document.getElementById("stat-mastery-text");
+        const statMasteryBar = document.getElementById("stat-mastery-bar");
+
+        const scenarioStepText = document.getElementById("scenario-step-text");
+        const scenarioCatText = document.getElementById("scenario-cat-text");
+        const scenarioTitle = document.getElementById("scenario-title");
+        const scenarioDesc = document.getElementById("scenario-desc");
+        const optionsContainer = document.getElementById("options-container");
+
+        const feedbackBox = document.getElementById("feedback-box");
+        const feedbackTitle = document.getElementById("feedback-title");
+        const feedbackDeltas = document.getElementById("feedback-deltas");
+        const feedbackSummary = document.getElementById("feedback-summary");
+
+        const btnOpenTheory = document.getElementById("btn-open-theory");
+        const btnNextScenario = document.getElementById("btn-next-scenario");
+
+        const modalTheory = document.getElementById("modal-theory");
+        const modalTheoryBody = document.getElementById("modal-theory-body");
+        const btnCloseTheory = document.getElementById("btn-close-theory");
+
+        const modalGlossary = document.getElementById("modal-glossary");
+        const btnOpenGlossary = document.getElementById("btn-open-glossary");
+        const btnCloseGlossary = document.getElementById("btn-close-glossary");
+        const glossarySearch = document.getElementById("glossary-search");
+        const glossaryGridContainer = document.getElementById("glossary-grid-container");
+
+        const modalFinalReport = document.getElementById("modal-final-report");
+        const btnRestartSim = document.getElementById("btn-restart-sim");
+        const btnViewGlossaryFinal = document.getElementById("btn-view-glossary-final");
+        const btnResetGame = document.getElementById("btn-reset-game");
+
+        const btnSoundToggle = document.getElementById("btn-sound-toggle");
+        const soundIcon = document.getElementById("sound-icon");
+
+        // Helper: Clamp values 0-100
+        function clamp(val) {
+            return Math.min(100, Math.max(0, val));
+        }
+
+        function getQualityLabel(val) {
+            if (val >= 80) return "우수";
+            if (val >= 60) return "양호";
+            if (val >= 40) return "보통";
+            if (val >= 20) return "주의";
+            return "위험";
+        }
+
+        function updateStatsUI() {
+            const b = clamp(gameState.stats.balance);
+            const e = clamp(gameState.stats.economy);
+            const q = clamp(gameState.stats.qol);
+
+            statBalanceVal.textContent = b + "%";
+            statBalanceText.textContent = getQualityLabel(b);
+            statBalanceBar.style.width = b + "%";
+
+            statEconomyVal.textContent = e + "%";
+            statEconomyText.textContent = getQualityLabel(e);
+            statEconomyBar.style.width = e + "%";
+
+            statQolVal.textContent = q + "%";
+            statQolText.textContent = getQualityLabel(q);
+            statQolBar.style.width = q + "%";
+
+            // Mastery calculation
+            const unlockedCount = gameState.unlockedTerms.size;
+            const totalTerms = GLOSSARY_DB.length;
+            const masteryPct = Math.round((unlockedCount / totalTerms) * 100);
+
+            statMasteryVal.textContent = masteryPct + "%";
+            statMasteryText.textContent = `${unlockedCount} / ${totalTerms}`;
+            statMasteryBar.style.width = masteryPct + "%";
+        }
+
+        // Render Current Scenario
+        function renderScenario(index) {
+            if (index >= SCENARIOS_DB.length) {
+                showFinalReport();
+                return;
+            }
+
+            const scenario = SCENARIOS_DB[index];
+            scenarioStepText.textContent = `시나리오 ${index + 1} / ${SCENARIOS_DB.length}`;
+            scenarioCatText.textContent = scenario.category;
+            scenarioTitle.textContent = scenario.title;
+            scenarioDesc.textContent = scenario.desc;
+
+            // Map Focus Highlight
+            document.querySelectorAll(".map-node").forEach(node => {
+                node.classList.remove("active-focus");
+                const dot = node.querySelector(".main-dot");
+                if (dot) dot.setAttribute("r", "5");
+            });
+
+            const targetNode = document.getElementById(scenario.focusNode);
+            if (targetNode) {
+                targetNode.classList.add("active-focus");
+                const dot = targetNode.querySelector(".main-dot");
+                if (dot) dot.setAttribute("r", "9");
+            }
+
+            document.getElementById("map-active-focus").textContent = `📍 현재 집중 지역: ${scenario.category} (${scenario.title.substring(0, 18)}...)`;
+
+            // Clear previous feedback
+            feedbackBox.style.display = "none";
+
+            // Render Choices
+            optionsContainer.innerHTML = "";
+            scenario.options.forEach((opt, optIndex) => {
+                const btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.dataset.optIndex = optIndex;
+
+                btn.innerHTML = `
+                    <div class="option-letter">${opt.letter}</div>
+                    <div class="option-text">${opt.text}</div>
+                `;
+
+                btn.addEventListener("click", () => handleOptionSelect(index, optIndex));
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // Handle Choice Selection
+        function handleOptionSelect(scenarioIndex, optIndex) {
+            const scenario = SCENARIOS_DB[scenarioIndex];
+            const opt = scenario.options[optIndex];
+
+            // Disable all option buttons
+            const allBtns = optionsContainer.querySelectorAll(".option-btn");
+            allBtns.forEach(b => b.disabled = true);
+
+            // Highlight selected button
+            const selectedBtn = allBtns[optIndex];
+            if (opt.type === "optimal") {
+                selectedBtn.classList.add("selected-optimal");
+                audio.playOptimal();
+            } else if (opt.type === "suboptimal") {
+                selectedBtn.classList.add("selected-suboptimal");
+                audio.playSuboptimal();
+            } else {
+                selectedBtn.classList.add("selected-warning");
+                audio.playWarning();
+            }
+
+            // Apply Stat Deltas
+            gameState.stats.balance = clamp(gameState.stats.balance + opt.deltas.balance);
+            gameState.stats.economy = clamp(gameState.stats.economy + opt.deltas.economy);
+            gameState.stats.qol = clamp(gameState.stats.qol + opt.deltas.qol);
+
+            // Unlock Academic Terms
+            if (opt.unlockedTerms) {
+                opt.unlockedTerms.forEach(termId => gameState.unlockedTerms.add(termId));
+            }
+
+            updateStatsUI();
+
+            // Save Progress
+            gameState.completedScenarios.push({ scenarioId: scenario.id, chosenOpt: optIndex });
+            saveGameState();
+
+            // Display Feedback Box
+            feedbackBox.style.display = "block";
+            
+            if (opt.type === "optimal") {
+                feedbackTitle.innerHTML = `✅ 최적의 지리적 정책 의사결정입니다!`;
+                feedbackTitle.style.color = "var(--accent-emerald)";
+            } else if (opt.type === "suboptimal") {
+                feedbackTitle.innerHTML = `⚠️ 부분적 한계가 존재하는 선택입니다.`;
+                feedbackTitle.style.color = "var(--accent-amber)";
+            } else {
+                feedbackTitle.innerHTML = `🚨 부작용이 우려되는 위험한 정책 선택입니다.`;
+                feedbackTitle.style.color = "var(--accent-rose)";
+            }
+
+            // Deltas display
+            feedbackDeltas.innerHTML = "";
+            for (const [key, val] of Object.entries(opt.deltas)) {
+                if (val !== 0) {
+                    const tag = document.createElement("span");
+                    const isPos = val > 0;
+                    tag.className = `delta-tag ${isPos ? 'delta-pos' : 'delta-neg'}`;
+                    const labelName = key === 'balance' ? '국토균형' : key === 'economy' ? '지역경제' : '삶의질';
+                    tag.textContent = `${labelName} ${isPos ? '+' : ''}${val}%`;
+                    feedbackDeltas.appendChild(tag);
+                }
+            }
+
+            feedbackSummary.textContent = opt.summary;
+
+            // Set up Theory Modal Content
+            btnOpenTheory.onclick = () => {
+                showTheoryModal(scenario, opt);
+            };
+        }
+
+        // Show Academic Breakdown Theory Modal
+        function showTheoryModal(scenario, selectedOpt) {
+            let termsHTML = "";
+            if (selectedOpt.unlockedTerms && selectedOpt.unlockedTerms.length > 0) {
+                const pills = selectedOpt.unlockedTerms.map(termId => {
+                    const item = GLOSSARY_DB.find(g => g.id === termId);
+                    return item ? `<span class="concept-pill">🔑 ${item.term}</span>` : '';
+                }).join(" ");
+                termsHTML = `
+                    <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px;">
+                        <div style="font-size: 0.8rem; font-weight: 700; color: #a5b4fc; margin-bottom: 0.3rem;">🔓 해금된 학술 지리 개념 노트</div>
+                        <div class="concept-pill-group">${pills}</div>
+                    </div>
+                `;
+            }
+
+            modalTheoryBody.innerHTML = `
+                <div class="theory-section">
+                    <h4>📌 ${scenario.category}: ${scenario.title}</h4>
+                    <div>${scenario.theory.heading}</div>
+                </div>
+                <div style="font-size: 0.9rem; color: #e2e8f0; line-height: 1.7;">
+                    ${scenario.theory.content}
+                </div>
+                ${termsHTML}
+            `;
+
+            modalTheory.classList.add("active");
+        }
+
+        // Show Glossary Modal
+        function renderGlossary(filterText = "") {
+            glossaryGridContainer.innerHTML = "";
+            const search = filterText.toLowerCase().trim();
+
+            GLOSSARY_DB.forEach(item => {
+                const isUnlocked = gameState.unlockedTerms.has(item.id);
+                const matchesSearch = item.term.toLowerCase().includes(search) || 
+                                      item.termEn.toLowerCase().includes(search) || 
+                                      item.cat.toLowerCase().includes(search) ||
+                                      item.def.toLowerCase().includes(search);
+
+                if (!matchesSearch) return;
+
+                const card = document.createElement("div");
+                card.className = `glossary-card ${isUnlocked ? '' : 'locked-term'}`;
+
+                card.innerHTML = `
+                    <div class="glossary-term">
+                        <span>${isUnlocked ? '🟢' : '🔒'} ${item.term}</span>
+                        <span style="font-size: 0.7rem; padding: 0.1rem 0.4rem; background: rgba(255,255,255,0.1); border-radius: 4px;">${item.cat}</span>
+                    </div>
+                    <div class="glossary-term-en">${item.termEn}</div>
+                    <div class="glossary-def" style="margin-top: 0.4rem;">
+                        ${isUnlocked ? item.def : '🔒 시나리오 선택을 통해 해당 학술 개념을 해금하세요.'}
+                    </div>
+                    ${isUnlocked ? `<div class="glossary-example">💡 실제 지리 사례: ${item.example}</div>` : ''}
+                `;
+
+                glossaryGridContainer.appendChild(card);
+            });
+        }
+
+        // Final Report Card
+        function showFinalReport() {
+            audio.playVictory();
+            const b = gameState.stats.balance;
+            const e = gameState.stats.economy;
+            const q = gameState.stats.qol;
+            const avg = Math.round((b + e + q) / 3);
+
+            let rank = "S급: 국토도시계획 대석학";
+            let badge = "🥇";
+            let desc = "한국 도시지리학 이론과 실무 공간 정책을 완벽히 융합하여 국토 균형과 경제 성장을 동시에 성취하셨습니다!";
+
+            if (avg < 50) {
+                rank = "C급: 초급 국토 연구원";
+                badge = "🥉";
+                desc = "일부 도시 정책에서 부작용이 발생했습니다. 학술 해설 및 개념 노트를 다시 검토해보세요!";
+            } else if (avg < 75) {
+                rank = "B급: 도시계획기사 전문관";
+                badge = "🥈";
+                desc = "안정적인 국토 관리 능력을 보여주셨습니다. 학술 이론의 세부 적용을 보완하면 최고 학자에 도전할 수 있습니다.";
+            }
+
+            document.getElementById("final-rank-badge").textContent = badge;
+            document.getElementById("final-rank-title").textContent = rank;
+            document.getElementById("final-rank-desc").textContent = desc;
+            document.getElementById("final-stat-balance").textContent = b + "%";
+            document.getElementById("final-stat-economy").textContent = e + "%";
+            document.getElementById("final-stat-qol").textContent = q + "%";
+
+            modalFinalReport.classList.add("active");
+        }
+
+        /* ==========================================================================
+           6. INITIALIZATION & EVENT LISTENERS
+           ========================================================================== */
+        document.addEventListener("DOMContentLoaded", () => {
+            loadGameState();
+            updateStatsUI();
+            renderScenario(gameState.currentIndex);
+
+            // Next Scenario Button
+            btnNextScenario.addEventListener("click", () => {
+                gameState.currentIndex++;
+                saveGameState();
+                renderScenario(gameState.currentIndex);
+            });
+
+            // Close Theory Modal
+            btnCloseTheory.addEventListener("click", () => {
+                modalTheory.classList.remove("active");
+            });
+
+            // Open/Close Glossary Modal
+            btnOpenGlossary.addEventListener("click", () => {
+                renderGlossary();
+                modalGlossary.classList.add("active");
+            });
+
+            btnCloseGlossary.addEventListener("click", () => {
+                modalGlossary.classList.remove("active");
+            });
+
+            glossarySearch.addEventListener("input", (e) => {
+                renderGlossary(e.target.value);
+            });
+
+            // Sound Toggle Button
+            btnSoundToggle.addEventListener("click", () => {
+                gameState.soundMuted = !gameState.soundMuted;
+                audio.muted = gameState.soundMuted;
+                soundIcon.textContent = gameState.soundMuted ? "🔇" : "🔊";
+                saveGameState();
+            });
+
+            // Reset Simulation Button
+            btnResetGame.addEventListener("click", () => {
+                if (confirm("정말로 시뮬레이션 진척도와 통계를 초기화하시겠습니까?")) {
+                    localStorage.removeItem(STORAGE_KEY);
+                    gameState = {
+                        currentIndex: 0,
+                        stats: { balance: 50, economy: 50, qol: 50 },
+                        completedScenarios: [],
+                        unlockedTerms: new Set(),
+                        soundMuted: false
+                    };
+                    updateStatsUI();
+                    renderScenario(0);
+                    modalFinalReport.classList.remove("active");
+                }
+            });
+
+            // Restart from Final Report
+            btnRestartSim.addEventListener("click", () => {
+                modalFinalReport.classList.remove("active");
+                gameState.currentIndex = 0;
+                gameState.stats = { balance: 50, economy: 50, qol: 50 };
+                saveGameState();
+                updateStatsUI();
+                renderScenario(0);
+            });
+
+            btnViewGlossaryFinal.addEventListener("click", () => {
+                modalFinalReport.classList.remove("active");
+                renderGlossary();
+                modalGlossary.classList.add("active");
+            });
+
+            // Close modals when clicking backdrop
+            [modalTheory, modalGlossary, modalFinalReport].forEach(modal => {
+                modal.addEventListener("click", (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove("active");
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
